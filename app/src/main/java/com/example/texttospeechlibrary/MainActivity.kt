@@ -40,12 +40,17 @@ class MainActivity : ComponentActivity() {
         setContent {
             TextToSpeechLibraryTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LazyColumn {
-                        item {
+                    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 30.dp)) {
+                    /*    item {
                             Greeting(
                                 name = "Android",
                                 modifier = Modifier.padding(innerPadding)
                             )
+                        }*/
+
+                        item {
+                            //CheckLanguage("Android")
+                            Greeting("A")
                         }
                     }
                 }
@@ -59,9 +64,9 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var ttsInitialized by remember { mutableStateOf(false) }
     val textToSpeech = remember {
-        TextToSpeech(context.applicationContext) { status ->
+        TextToSpeech(context.applicationContext,{ status ->
             ttsInitialized = status == TextToSpeech.SUCCESS
-        }
+        },"com.google.android.tts")
     }
     var availableVoices by remember { mutableStateOf<List<Voice>>(emptyList()) }
     var selectedVoice by remember { mutableStateOf<Voice?>(null) }
