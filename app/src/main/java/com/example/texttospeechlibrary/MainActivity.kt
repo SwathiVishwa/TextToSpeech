@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
@@ -26,6 +27,7 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,17 +42,16 @@ class MainActivity : ComponentActivity() {
         setContent {
             TextToSpeechLibraryTheme {
                 Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    LazyColumn(modifier = Modifier.fillMaxSize().padding(horizontal = 10.dp, vertical = 30.dp)) {
-                    /*    item {
-                            Greeting(
-                                name = "Android",
-                                modifier = Modifier.padding(innerPadding)
-                            )
-                        }*/
+                    LazyColumn(
+                        modifier = Modifier
+                            .fillMaxSize()
+                            .padding(innerPadding)
+                            .padding(horizontal = 10.dp, vertical = 30.dp)
+                    ) {
+
 
                         item {
-                            //CheckLanguage("Android")
-                            Greeting("A")
+                            Greeting("User")
                         }
                     }
                 }
@@ -64,12 +65,55 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var ttsInitialized by remember { mutableStateOf(false) }
     val textToSpeech = remember {
-        TextToSpeech(context.applicationContext,{ status ->
+        TextToSpeech(context.applicationContext, { status ->
             ttsInitialized = status == TextToSpeech.SUCCESS
-        },"com.google.android.tts")
+        }, "com.google.android.tts")
     }
     var availableVoices by remember { mutableStateOf<List<Voice>>(emptyList()) }
     var selectedVoice by remember { mutableStateOf<Voice?>(null) }
+    var availableLanguages by remember { mutableStateOf<List<String>>(emptyList()) }
+    var selectedLanguage by remember { mutableStateOf("en") }
+
+    // Function to get language display name
+    fun getLanguageDisplayName(languageCode: String): String {
+        return when (languageCode) {
+            "en" -> "English"
+            "es" -> "Spanish"
+            "fr" -> "French"
+            "de" -> "German"
+            "it" -> "Italian"
+            "pt" -> "Portuguese"
+            "ru" -> "Russian"
+            "ja" -> "Japanese"
+            "ko" -> "Korean"
+            "zh" -> "Chinese"
+            "ar" -> "Arabic"
+            "hi" -> "Hindi"
+            "nl" -> "Dutch"
+            "sv" -> "Swedish"
+            "da" -> "Danish"
+            "no" -> "Norwegian"
+            "fi" -> "Finnish"
+            "pl" -> "Polish"
+            "tr" -> "Turkish"
+            "th" -> "Thai"
+            "vi" -> "Vietnamese"
+            "cs" -> "Czech"
+            "hu" -> "Hungarian"
+            "ro" -> "Romanian"
+            "sk" -> "Slovak"
+            "bg" -> "Bulgarian"
+            "hr" -> "Croatian"
+            "sl" -> "Slovenian"
+            "et" -> "Estonian"
+            "lv" -> "Latvian"
+            "lt" -> "Lithuanian"
+            "el" -> "Greek"
+            "he" -> "Hebrew"
+            "uk" -> "Ukrainian"
+            else -> languageCode.uppercase()
+        }
+    }
 
     // Initialize TTS and load voices
     LaunchedEffect(ttsInitialized) {
@@ -77,7 +121,27 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             textToSpeech.language = Locale.US
             val voices = textToSpeech.voices
             if (voices != null) {
-                availableVoices = voices.filter { it.locale.language == "en" }
+                // Only include specific languages
+                val targetLanguages = listOf("en", "es", "it", "de", "fr", "pt")
+                availableLanguages = voices.map { it.locale.language }
+                    .distinct()
+                    .filter { it in targetLanguages }
+                    .sorted()
+
+                // Filter voices by selected language
+                availableVoices = voices.filter { it.locale.language == selectedLanguage }
+                selectedVoice = availableVoices.firstOrNull()
+                selectedVoice?.let { textToSpeech.voice = it }
+            }
+        }
+    }
+
+    // Update voices when language selection changes
+    LaunchedEffect(selectedLanguage, ttsInitialized) {
+        if (ttsInitialized) {
+            val voices = textToSpeech.voices
+            if (voices != null) {
+                availableVoices = voices.filter { it.locale.language == selectedLanguage }
                 selectedVoice = availableVoices.firstOrNull()
                 selectedVoice?.let { textToSpeech.voice = it }
             }
@@ -105,11 +169,40 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
             text = content,
             modifier = modifier
         )
+        Spacer(modifier = Modifier.height(28.dp))
+        // Language dropdown
+        var languageExpanded by remember { mutableStateOf(false) }
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { languageExpanded = true },
+                modifier = Modifier.align(Alignment.Center)
+            ) {
+                Text("Language: ${getLanguageDisplayName(selectedLanguage)}")
+            }
+            DropdownMenu(
+                expanded = languageExpanded,
+                onDismissRequest = { languageExpanded = false }) {
+                availableLanguages.forEach { language ->
+                    DropdownMenuItem(
+                        text = { Text(getLanguageDisplayName(language)) },
+                        onClick = {
+                            selectedLanguage = language
+                            languageExpanded = false
+                        }
+                    )
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(28.dp))
 
         // Dropdown to select voice
         var expanded by remember { mutableStateOf(false) }
-        Box {
-            Button(onClick = { expanded = true }) {
+        Box(modifier = Modifier.fillMaxWidth()) {
+            Button(
+                onClick = { expanded = true },
+                modifier = Modifier.align(Alignment.Center)
+            ) {
                 Text(selectedVoice?.name ?: "Select Voice")
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
