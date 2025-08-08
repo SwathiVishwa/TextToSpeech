@@ -30,6 +30,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.example.texttospeechlibrary.ui.theme.TextToSpeechLibraryTheme
@@ -51,7 +52,7 @@ class MainActivity : ComponentActivity() {
 
 
                         item {
-                            Greeting("User")
+                            Greeting("")
                         }
                     }
                 }
@@ -115,6 +116,26 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
         }
     }
 
+    // Function to format voice display name
+    fun formatVoiceName(voice: Voice): String {
+        val languageName = getLanguageDisplayName(voice.locale.language)
+        val countryName = voice.locale.displayCountry
+
+        // Extract gender from voice name or features
+        val gender = when {
+            voice.name.contains("male", ignoreCase = true) && !voice.name.contains(
+                "female",
+                ignoreCase = true
+            ) -> "Male"
+            voice.name.contains("female", ignoreCase = true) -> "Female"
+            voice.features?.contains("maleVoice") == true -> "Male"
+            voice.features?.contains("femaleVoice") == true -> "Female"
+            else -> "Voice"
+        }
+
+        return "$languageName - $gender ($countryName)"
+    }
+
     // Initialize TTS and load voices
     LaunchedEffect(ttsInitialized) {
         if (ttsInitialized) {
@@ -157,9 +178,7 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
     }
 
     val content =
-        "Knowing how to write a paragraph is incredibly important. It’s a basic aspect of writing, and it is something that everyone should know how to do. There is a specific structure that you have to follow when you’re writing a paragraph. This structure helps make it easier for the reader to understand what is going on. Through writing good paragraphs, a person can communicate a lot better through their writing.\n" +
-                "\n" +
-                "When you want to write a paragraph, most of the time you should start off by coming up with an idea. After you have your idea or topic, you can start thinking about different things you can do to expand upon that idea. You should only finish the paragraph when you’ve finished covering everything you want about that idea."
+        "Life is a journey filled with countless moments, each offering an opportunity to learn, grow, and appreciate the world around us. Every interaction, whether with people, nature, or ideas, leaves a subtle mark that shapes who we are. A kind word can inspire hope, a small action can create change, and a curious mind can open doors to endless possibilities. Patience teaches us to wait without losing heart, and gratitude reminds us to cherish what we have while working toward what we dream of. Just as a river flows steadily toward the sea, we too can move forward, embracing challenges as stepping stones and celebrating victories, both big and small. In the rhythm of life, there is beauty in both the quiet moments and the grand adventures, and each heartbeat is a reminder that we are part of something greater than ourselves."
     Column {
         Text(
             text = "Hello $name!",
@@ -180,11 +199,16 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 Text("Language: ${getLanguageDisplayName(selectedLanguage)}")
             }
             DropdownMenu(
+                modifier = Modifier.fillMaxWidth(0.8f),
                 expanded = languageExpanded,
                 onDismissRequest = { languageExpanded = false }) {
                 availableLanguages.forEach { language ->
                     DropdownMenuItem(
-                        text = { Text(getLanguageDisplayName(language)) },
+                        text = {
+                            Text(
+                                getLanguageDisplayName(language), textAlign = TextAlign.Center,
+                                modifier = Modifier.fillMaxWidth(0.6f))
+                        },
                         onClick = {
                             selectedLanguage = language
                             languageExpanded = false
@@ -203,12 +227,14 @@ fun Greeting(name: String, modifier: Modifier = Modifier) {
                 onClick = { expanded = true },
                 modifier = Modifier.align(Alignment.Center)
             ) {
-                Text(selectedVoice?.name ?: "Select Voice")
+                Text(selectedVoice?.let { formatVoiceName(it) } ?: "Select Voice")
             }
             DropdownMenu(expanded = expanded, onDismissRequest = { expanded = false }) {
                 availableVoices.forEach { voice ->
                     DropdownMenuItem(
-                        text = { Text(voice.name) },
+                        text = {
+                            Text(formatVoiceName(voice))
+                        },
                         onClick = {
                             selectedVoice = voice
                             textToSpeech.voice = voice
